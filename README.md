@@ -19,6 +19,23 @@ Firmware License : [![Many Licenses](https://img.shields.io/badge/license-LGPL2+
 
 ```
 
+### Windows host
+
+On Windows machines the firmware is typically built inside the
+[Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/) or a
+Linux virtual machine. Install the same packages using `apt` and run the
+following prior to invoking `make`:
+
+```bash
+git submodule update --init --recursive
+```
+
+Cloning the `linux` and `hdl` repositories may take several minutes because
+they contain large histories. If the download fails, rerun the command until
+all submodules report a commit hash with `git submodule status`.
+
+Without initializing the submodules the build will fail with missing targets.
+
 Due to incompatibility between the AMD/Xilinx GCC toolchain supplied with Vivado/Vitis and Buildroot.
 This project switched to Buildroot external Toolchain: Linaro GCC 7.3-2018.05 7.3.1
 
@@ -39,18 +56,18 @@ This toolchain is used to build: Buildroot, Linux and u-boot
 "sdk create_hw_project -name hw_0 -hwspec build/system_top.hdf"
     (file "scripts/create_fsbl_project.tcl" line 5)
 ```
-you may be able to work around it by preventing eclipse from using GTK3 for the Standard Widget Toolkit (SWT). Prior to running make, also set the following environment variable: 
+you may be able to work around it by preventing eclipse from using GTK3 for the Standard Widget Toolkit (SWT). Prior to running make, also set the following environment variable:
 ```bash
 export SWT_GTK3=0
 ```
 This problem seems to affect Ubuntu 16.04LTS only.
 
- * Updating your local repository 
- ```bash 
+ * Updating your local repository
+ ```bash
       git pull
       git submodule update --init --recursive
   ```
-   
+
 * Build Artifacts
  ```bash
       michael@HAL9000:~/devel/plutosdr-fw$ ls -AGhl build
@@ -87,19 +104,19 @@ This problem seems to affect Ubuntu 16.04LTS only.
       -rw-rw-r-- 1 michael  23K Mär  1 09:26 zynq-pluto-sdr-revc.dtb
 
  ```
- 
+
  * Main targets
- 
+
      | File  | Comment |
-     | ------------- | ------------- | 
+     | ------------- | ------------- |
      | pluto.frm | Main PlutoSDR firmware file used with the USB Mass Storage Device |
      | pluto.dfu | Main PlutoSDR firmware file used in DFU mode |
      | boot.frm  | First and Second Stage Bootloader (u-boot + fsbl + uEnv) used with the USB Mass Storage Device |
      | boot.dfu  | First and Second Stage Bootloader (u-boot + fsbl) used in DFU mode |
      | uboot-env.dfu  | u-boot default environment used in DFU mode |
-     | plutosdr-fw-vX.XX.zip  | ZIP archive containg all of the files above |  
-     | plutosdr-jtag-bootstrap-vX.XX.zip  | ZIP archive containg u-boot and Vivao TCL used for JATG bootstrapping |       
- 
+     | plutosdr-fw-vX.XX.zip  | ZIP archive containg all of the files above |
+     | plutosdr-jtag-bootstrap-vX.XX.zip  | ZIP archive containg u-boot and Vivao TCL used for JATG bootstrapping |
+
   * Other intermediate targets
 
      | File  | Comment |
@@ -117,7 +134,26 @@ This problem seems to affect Ubuntu 16.04LTS only.
      | uboot-env.txt | u-boot default environment in human readable text format |
      | zImage | Compressed Linux Kernel Image |
      | zynq-pluto-sdr.dtb | Device Tree Blob for Rev.A |
-     | zynq-pluto-sdr-revb.dtb | Device Tree Blob for Rev.B|     
+     | zynq-pluto-sdr-revb.dtb | Device Tree Blob for Rev.B|
      | zynq-pluto-sdr-revc.dtb | Device Tree Blob for Rev.C|
- 
 
+
+
+## Hardware Trigger Example
+
+A basic example for enabling a hardware trigger pin is provided in
+`patches/linux/hw_trigger.patch`. The patch dedicates MIO26 on the expansion
+header for triggering. Apply the patch after initializing the
+`linux` submodule and rebuild the firmware:
+
+```bash
+git submodule update --init linux
+cd linux && git apply ../patches/linux/hw_trigger.patch
+cd .. && make
+```
+
+The patched device tree dedicates the selected pin for receiving a TTL pulse
+which can be used to synchronize TX and RX for radar experiments.  The same pin
+can optionally capture a 1&nbsp;PPS signal by enabling the `pps_in` node in the
+patch.  This allows locking the system to an external GPSDO or reference
+clock for phase-coherent operation.

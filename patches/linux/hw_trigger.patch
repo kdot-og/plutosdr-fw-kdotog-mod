@@ -1,0 +1,27 @@
+--- a/arch/arm/boot/dts/zynq-pluto-sdr.dts
++++ b/arch/arm/boot/dts/zynq-pluto-sdr.dts
+@@
+ &gpio0 {
+-    hw_trigger: hw-trigger {
+-        gpio-hog;
+-        gpios = <26 GPIO_ACTIVE_HIGH>; /* Bank1 pin10 example */
+-        line-name = "hw_trigger";
+-        input;
+-    };
++    /* Dedicated trigger pin on MIO26 */
++    hw_trigger: hw-trigger {
++        gpio-hog;
++        gpios = <26 GPIO_ACTIVE_HIGH>; /* MIO26 expansion header */
++        line-name = "hw_trigger";
++        input;
++    };
++
++    /* Optional 1PPS capture using the same pin */
++    pps_in: pps-in {
++        compatible = "pps-gpio";
++        gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
++        assert-rising-edge;
++        label = "gpsdo-1pps";
++        status = "disabled"; /* enable if external PPS is connected */
++    };
+ };
