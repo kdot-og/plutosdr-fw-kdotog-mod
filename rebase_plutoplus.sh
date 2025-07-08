@@ -8,6 +8,10 @@ PATCH_DIR="./patches"
 
 OLD_PATCH_DIR=${OLD_PATCH_DIR:?OLD_PATCH_DIR environment variable must be set}
 
+# Resolve absolute paths before changing directories
+OLD_PATCH_DIR=$(realpath "$OLD_PATCH_DIR")
+PATCH_DIR=$(realpath "$PATCH_DIR")
+
 mkdir -p "$PATCH_DIR"
 
 # Clone and checkout
@@ -23,8 +27,13 @@ else
     git checkout revc-plus-rebase
 fi
 
-# Copy old patches
-cp "$OLD_PATCH_DIR"/*.diff "$PATCH_DIR"/
+# Ensure submodules are available for patching
+git submodule update --init --recursive
+
+# Copy old patches if directories differ
+if [ "$OLD_PATCH_DIR" != "$PATCH_DIR" ]; then
+    cp "$OLD_PATCH_DIR"/*.diff "$PATCH_DIR"/
+fi
 
 applied=()
 failed=()
@@ -34,9 +43,13 @@ for patch in "$PATCH_DIR"/*.diff; do
     if git am --3way "$patch"; then
         applied+=("$(basename "$patch")")
     else
-        git am --abort
-        git apply --reject --whitespace=fix "$patch"
-        failed+=("$(basename "$patch")")
+        git am --abort >/dev/null 2>&1 || true
+        if git apply --reject --whitespace=fix "$patch"; then
+            failed+=("$(basename "$patch")")
+        else
+            echo "Failed to apply $patch" >&2
+            exit 1
+        fi
     fi
     echo
 done
