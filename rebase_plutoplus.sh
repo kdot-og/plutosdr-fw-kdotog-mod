@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_URL="https://github.com/analogdevicesinc/plutosdr-fw.git"
 TAG="v0.39"
+BRANCH="revc-plus-rebase"
 REPO_DIR="plutosdr-fw"
 PATCH_DIR="./patches"
 
@@ -21,10 +22,13 @@ fi
 cd "$REPO_DIR"
 
 git fetch --tags
-if ! git rev-parse revc-plus-rebase >/dev/null 2>&1; then
-    git checkout -b revc-plus-rebase "$TAG"
+git config user.email "Hurricankaden@icloud.com"
+git config user.name "kdot-og"
+
+if ! git rev-parse "$BRANCH" >/dev/null 2>&1; then
+    git checkout -b "$BRANCH" "$TAG"
 else
-    git checkout revc-plus-rebase
+    git checkout "$BRANCH"
 fi
 
 # Ensure submodules are available for patching
@@ -39,18 +43,28 @@ applied=()
 failed=()
 
 for patch in "$PATCH_DIR"/*.diff; do
-    echo "Applying $patch"
-    if git am --3way "$patch"; then
-        applied+=("$(basename "$patch")")
-    else
-        git am --abort >/dev/null 2>&1 || true
-        if git apply --reject --whitespace=fix "$patch"; then
-            failed+=("$(basename "$patch")")
+    name=$(basename "$patch" .diff)
+    case $name in
+        fw) target="." ;;
+        buildroot|linux|hdl|u-boot-xlnx) target="$name" ;;
+        *) echo "Unknown patch $patch" >&2; exit 1 ;;
+    esac
+
+    echo "Applying $(basename "$patch") in $target"
+    (
+        cd "$target"
+        if git am --3way "$patch"; then
+            applied+=("$(basename "$patch")")
         else
-            echo "Failed to apply $patch" >&2
-            exit 1
+            git am --abort >/dev/null 2>&1 || true
+            if git apply --reject --whitespace=fix "$patch"; then
+                failed+=("$(basename "$patch")")
+            else
+                echo "Failed to apply $patch" >&2
+                exit 1
+            fi
         fi
-    fi
+    )
     echo
 done
 
