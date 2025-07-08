@@ -121,3 +121,19 @@ This problem seems to affect Ubuntu 16.04LTS only.
      | zynq-pluto-sdr-revc.dtb | Device Tree Blob for Rev.C|
  
 
+* Building PlutoPlus firmware
+
+To rebuild the PlutoPlus patches on top of the upstream plutosdr-fw v0.39 tree, point `OLD_PATCH_DIR` at the directory containing the original patches and run `rebase_plutoplus.sh`:
+```bash
+export OLD_PATCH_DIR=/path/to/plutoplus/patches
+./rebase_plutoplus.sh
+```
+This clones the v0.39 repository, applies the patches and writes the results into `rebased-patches/`.
+
+Build the firmware with the usual commands:
+```bash
+cd plutosdr-fw
+export VIVADO_SETTINGS=/opt/Xilinx/Vivado/2021.2/settings64.sh
+make
+```
+All build dependencies and usage match the standard instructions earlier in this document.
