@@ -11,9 +11,12 @@ OLD_PATCH_DIR=${OLD_PATCH_DIR:?OLD_PATCH_DIR environment variable must be set}
 
 # Resolve absolute paths before changing directories
 OLD_PATCH_DIR=$(realpath "$OLD_PATCH_DIR")
+mkdir -p "$PATCH_DIR"
 PATCH_DIR=$(realpath "$PATCH_DIR")
 
-mkdir -p "$PATCH_DIR"
+# Configure identity globally so submodules inherit it
+git config --global user.email "Hurricankaden@icloud.com"
+git config --global user.name "kdot-og"
 
 # Clone and checkout
 if [ ! -d "$REPO_DIR" ]; then
